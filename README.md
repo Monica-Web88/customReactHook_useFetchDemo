@@ -1,16 +1,92 @@
-# React + Vite
+# useFetch
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A tiny, dependency-free React hook for fetching JSON with built-in loading and error state, automatic request cancellation, and one-call retry.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Simple API**: pass a URL, get back `data`, `loading`, `error`, and `retry`
+- **Automatic cancellation**: in-flight requests are aborted on unmount or when the URL changes (via `AbortController`)
+- **No race conditions**: stale responses from a previous URL never overwrite newer state
+- **HTTP error handling**: non-2xx responses are surfaced as errors
+- **Retry support**: re-run the same request with a single function call
+- **Zero dependencies**: only React
 
-## React Compiler
+## Installation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Copy `useFetch.js` into your project (for example `src/hooks/useFetch.js`).
 
-## Expanding the ESLint configuration
+Requires React 16.8+ (hooks support).
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Usage
+
+```jsx
+import useFetch from "./hooks/useFetch";
+
+function Users() {
+  const { data, loading, error, retry } = useFetch(
+    "https://jsonplaceholder.typicode.com/users"
+  );
+
+  if (loading) return <p>Loading...</p>;
+
+  if (error) {
+    return (
+      <div>
+        <p>Something went wrong: {error.message}</p>
+        <button onClick={retry}>Try again</button>
+      </div>
+    );
+  }
+
+  return (
+    <ul>
+      {data.map((user) => (
+        <li key={user.id}>{user.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## API
+
+```js
+const { data, loading, error, retry } = useFetch(url);
+```
+
+### Parameters
+
+| Name  | Type     | Description                      |
+| ----- | -------- | -------------------------------- |
+| `url` | `string` | The endpoint to fetch JSON from. |
+
+### Returns
+
+| Name      | Type             | Description                                                     |
+| --------- | ---------------- | --------------------------------------------------------------- |
+| `data`    | `any \| null`    | Parsed JSON response. `null` while loading or after an error.   |
+| `loading` | `boolean`        | `true` while a request is in progress.                          |
+| `error`   | `Error \| null`  | The error if the request failed (network error or non-2xx).     |
+| `retry`   | `() => void`     | Re-triggers the request for the current URL.                    |
+
+## How it works
+
+1. On mount (or when `url` changes), the hook sets `loading` to `true` and starts a `fetch` with an `AbortController` signal.
+2. If the response is not OK (status outside 200-299), it throws an error like `Request failed: 404`.
+3. On success, `data` is set and `loading` becomes `false`.
+4. When the component unmounts or `url` changes, the pending request is aborted, and the resulting `AbortError` is ignored.
+5. Calling `retry()` increments an internal counter, which re-runs the effect and refetches.
+
+## Limitations
+
+- Only supports `GET` requests with default options (no custom headers, method, or body).
+- Assumes the response body is JSON.
+- No built-in caching, deduplication, or automatic retries. For those, consider libraries like [TanStack Query](https://tanstack.com/query) or [SWR](https://swr.vercel.app).
+
+## Contributing
+
+Issues and pull requests are welcome.
+
+## License
+
+MIT
