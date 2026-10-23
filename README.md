@@ -1,6 +1,6 @@
 # useFetch
 
-A tiny, dependency-free React hook for fetching JSON with built-in loading and error state, automatic request cancellation, and one-call retry.
+A lightweight React hook, useFetch, that fetches JSON from a URL with built-in loading and error states, automatic request cancellation on unmount or URL change, and a retry function.
 
 ## Features
 
@@ -16,37 +16,6 @@ A tiny, dependency-free React hook for fetching JSON with built-in loading and e
 Copy `useFetch.js` into your project (for example `src/hooks/useFetch.js`).
 
 Requires React 16.8+ (hooks support).
-
-## Usage
-
-```jsx
-import useFetch from "./hooks/useFetch";
-
-function Users() {
-  const { data, loading, error, retry } = useFetch(
-    "https://jsonplaceholder.typicode.com/users"
-  );
-
-  if (loading) return <p>Loading...</p>;
-
-  if (error) {
-    return (
-      <div>
-        <p>Something went wrong: {error.message}</p>
-        <button onClick={retry}>Try again</button>
-      </div>
-    );
-  }
-
-  return (
-    <ul>
-      {data.map((user) => (
-        <li key={user.id}>{user.name}</li>
-      ))}
-    </ul>
-  );
-}
-```
 
 ## API
 
@@ -76,12 +45,6 @@ const { data, loading, error, retry } = useFetch(url);
 3. On success, `data` is set and `loading` becomes `false`.
 4. When the component unmounts or `url` changes, the pending request is aborted, and the resulting `AbortError` is ignored.
 5. Calling `retry()` increments an internal counter, which re-runs the effect and refetches.
-
-## Limitations
-
-- Only supports `GET` requests with default options (no custom headers, method, or body).
-- Assumes the response body is JSON.
-- No built-in caching, deduplication, or automatic retries. For those, consider libraries like [TanStack Query](https://tanstack.com/query) or [SWR](https://swr.vercel.app).
 
 ## Contributing
 
